@@ -63,7 +63,7 @@ jobs:
           # Il Dockerfile dello Space fa git clone dal fork a build-time,
           # quindi basta un factory-reboot per prendere il codice nuovo
           RESPONSE=$(curl -s -X POST \
-            "https://huggingface.co/api/spaces/Rudm4n/TVCasa2026/restart?factory=true" \
+            "https://huggingface.co/api/spaces/Rudm4n/TVCasa2025/restart?factory=true" \
             -H "Authorization: Bearer ${HF_TOKEN}")
           echo "HF Response: $RESPONSE"
 
@@ -72,7 +72,7 @@ jobs:
           if [ "${{ steps.check.outputs.new_commits }}" != "0" ]; then
             echo "### Sync completed" >> $GITHUB_STEP_SUMMARY
             echo "- Merged **${{ steps.check.outputs.new_commits }}** new commits from upstream" >> $GITHUB_STEP_SUMMARY
-            echo "- Triggered factory rebuild on [HF Space](https://huggingface.co/spaces/Rudm4n/TVCasa2026)" >> $GITHUB_STEP_SUMMARY
+            echo "- Triggered factory rebuild on [HF Space](https://huggingface.co/spaces/Rudm4n/TVCasa2025)" >> $GITHUB_STEP_SUMMARY
           else
             echo "### No changes" >> $GITHUB_STEP_SUMMARY
             echo "Fork is already up to date with upstream." >> $GITHUB_STEP_SUMMARY
