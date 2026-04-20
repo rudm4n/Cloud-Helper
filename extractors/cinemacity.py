@@ -10,7 +10,7 @@ from typing import Any, Dict, Optional
 import aiohttp
 from aiohttp import ClientSession, ClientTimeout, TCPConnector
 from aiohttp_socks import ProxyConnector
-from config import FLARESOLVERR_URL, FLARESOLVERR_TIMEOUT, get_proxy_for_url, TRANSPORT_ROUTES, GLOBAL_PROXIES
+from config import FLARESOLVERR_URL, FLARESOLVERR_TIMEOUT, get_proxy_for_url, TRANSPORT_ROUTES, GLOBAL_PROXIES, get_connector_for_proxy
 from utils.smart_request import smart_request
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class CinemaCityExtractor:
         if self.session is None or self.session.closed:
             timeout = ClientTimeout(total=60, connect=30, sock_read=30)
             proxy = get_proxy_for_url(self.base_url, TRANSPORT_ROUTES, self.proxies)
-            connector = ProxyConnector.from_url(proxy) if proxy else TCPConnector(limit=0, use_dns_cache=True)
+            connector = get_connector_for_proxy(proxy) if proxy else TCPConnector(limit=0, use_dns_cache=True)
             self.session = ClientSession(timeout=timeout, connector=connector, headers={'User-Agent': self.user_agent})
         return self.session
 

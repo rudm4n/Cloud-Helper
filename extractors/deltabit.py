@@ -8,7 +8,7 @@ from urllib.parse import urlparse, urljoin, urlencode
 import aiohttp
 from bs4 import BeautifulSoup, SoupStrainer
 
-from config import FLARESOLVERR_URL, FLARESOLVERR_TIMEOUT, get_proxy_for_url, TRANSPORT_ROUTES, GLOBAL_PROXIES
+from config import FLARESOLVERR_URL, FLARESOLVERR_TIMEOUT, get_proxy_for_url, TRANSPORT_ROUTES
 from utils.cookie_cache import CookieCache
 
 logger = logging.getLogger(__name__)

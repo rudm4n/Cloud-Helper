@@ -67,6 +67,8 @@ class DoodStreamExtractor:
 
     async def _request_byparr(self, url: str) -> dict:
         """Performs a request via Byparr (v1 API style for challenge bypass)."""
+        if not settings.byparr_url:
+            raise ExtractorError("Byparr URL not configured")
         endpoint = f"{settings.byparr_url.rstrip('/')}/v1"
         payload = {
             "cmd": "request.get",
