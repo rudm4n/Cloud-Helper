@@ -37,6 +37,7 @@ class VavooExtractor:
         self.proxies = proxies or []
         self._cached_sig = None
         self._cached_sig_ts = 0
+        self.bypassed_domains = set()
 
     def _get_random_proxy(self):
         """Restituisce un proxy casuale dalla lista."""
@@ -52,12 +53,13 @@ class VavooExtractor:
         try:
             from urllib.parse import urlsplit
             domain = urlsplit(url).netloc
-            if domain:
+            if domain and domain not in self.bypassed_domains:
                 # Always bypass these domains for Vavoo/Mediahubmx to ensure IP consistency
                 bypass_domains = ["lokke.app", "vavoo.to", "vavoo.tv", "mediahubmx.cc"]
                 if any(d in domain.lower() for d in bypass_domains):
-                    # We don't track state here to keep it simple, os.system handles duplicates fine
+                    logger.info(f"⚡ [Vavoo Bypass] Excluding {domain} from WARP...")
                     os.system(f"warp-cli --accept-tos tunnel host add {domain} > /dev/null 2>&1")
+                    self.bypassed_domains.add(domain)
         except:
             pass
 
