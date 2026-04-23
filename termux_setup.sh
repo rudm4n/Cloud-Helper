@@ -245,22 +245,12 @@ screen -dmS easyproxy proot-distro login ubuntu -- bash /root/easyproxy_start.sh
 CMD_EOF
 chmod +x "$PREFIX/bin/easyproxy"
 
-# Create update command
 cat > "$PREFIX/bin/easyproxy-update" << 'UPD_EOF'
 #!/data/data/com.termux/files/usr/bin/bash
-echo "🔄 Updating EasyProxy..."
-# Stop current instance if running
+echo "🔄 Running full EasyProxy system update..."
 easyproxy-stop 2>/dev/null || true
-
-proot-distro login ubuntu -- bash -c '
-    source /root/ep_venv/bin/activate 2>/dev/null || true
-    cd /root/EasyProxy
-    git pull
-    pip install --no-cache-dir --ignore-installed -r requirements.txt --break-system-packages 2>&1 | tail -3
-    echo "✅ EasyProxy codebase updated!"
-'
-
-# Restart in background
+curl -sL https://raw.githubusercontent.com/realbestia1/EasyProxy/main/termux_setup.sh | bash
+echo "✅ EasyProxy system updated successfully!"
 easyproxy
 UPD_EOF
 chmod +x "$PREFIX/bin/easyproxy-update"
