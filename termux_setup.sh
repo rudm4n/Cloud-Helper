@@ -269,6 +269,14 @@ echo "✅ Stopped."
 STOP_EOF
 chmod +x "$PREFIX/bin/easyproxy-stop"
 
+# Create logs command
+cat > "$PREFIX/bin/easyproxy-logs" << 'LOGS_EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+echo "📖 Opening logs... (Press Ctrl+A then D to exit logs without stopping)"
+screen -r easyproxy
+LOGS_EOF
+chmod +x "$PREFIX/bin/easyproxy-logs"
+
 log "Launcher scripts created."
 
 # ============================================================
@@ -282,7 +290,7 @@ echo ""
 echo -e "  ${BLUE}Start:${NC}   easyproxy"
 echo -e "  ${BLUE}Update:${NC}  easyproxy-update"
 echo -e "  ${BLUE}Stop:${NC}    easyproxy-stop"
-echo -e "  ${BLUE}Logs:${NC}    screen -r easyproxy"
+echo -e "  ${BLUE}Logs:${NC}    easyproxy-logs"
 echo -e "  ${BLUE}Config:${NC}  Edit inside proot:"
 echo -e "           proot-distro login ubuntu"
 echo -e "           nano /root/EasyProxy/.env"
