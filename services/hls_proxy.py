@@ -1381,6 +1381,7 @@ class HLSProxy:
                     request_headers=combined_headers,
                     bypass_warp=bypass_warp
                 )
+                bypass_warp = result.get("bypass_warp", bypass_warp)
                 stream_url = result["destination_url"]
                 stream_headers = result.get("request_headers", {})
                 captured_manifest = result.get("captured_manifest")
@@ -1924,6 +1925,7 @@ class HLSProxy:
             stream_headers = result.get("request_headers", {})
             mediaflow_endpoint = result.get("mediaflow_endpoint", "hls_proxy")
             force_disable_ssl = result.get("disable_ssl", False)
+            bypass_warp = result.get("bypass_warp", bypass_warp)
             
             # Log dello stato dell'estrattore
             logger.debug(f"Extractor Debug: Extractor result bypass_warp: {result.get('bypass_warp')}")
