@@ -71,13 +71,11 @@ class FreeProxyManager:
         
         return all_candidates
 
-    async def _probe_proxy_worker(self, proxy_url: str, probe_func: Callable[[str], Any], semaphore: asyncio.Semaphore, good_list: List[str]):
-        # Se abbiamo già abbastanza proxy buoni, non serve continuare (se max_good > 0)
+    async def _probe_proxy_worker(self, proxy_url: str, probe_func: Callable[[str], Any], semaphore: asyncio.Semaphore, good_list: List[str], ready_event: Optional[asyncio.Event] = None):
         if self.max_good > 0 and len(good_list) >= self.max_good:
             return
 
         async with semaphore:
-            # Ri-controllo dopo il semaforo
             if self.max_good > 0 and len(good_list) >= self.max_good:
                 return
                 
@@ -89,8 +87,11 @@ class FreeProxyManager:
                 
                 if is_good:
                     if self.max_good <= 0 or len(good_list) < self.max_good:
-                        good_list.append(proxy_url)
-                        logger.info(f"ProxyManager[{self.name}]: Validated working proxy: {proxy_url}")
+                        if proxy_url not in good_list:
+                            good_list.append(proxy_url)
+                            logger.info(f"ProxyManager[{self.name}]: Validated working proxy: {proxy_url}")
+                            if ready_event and len(good_list) >= 3:
+                                ready_event.set()
             except Exception:
                 pass
 
@@ -100,27 +101,45 @@ class FreeProxyManager:
             return list(self.proxies)
 
         async with self._refresh_lock:
+            # Ri-controllo dopo il lock
             if not force_refresh and self.proxies and self.expires_at > time.time():
                 return list(self.proxies)
 
-            logger.info(f"ProxyManager[{self.name}]: Refreshing and validating free proxy pool (parallel, max_fetch={self.max_fetch})...")
+            logger.info(f"ProxyManager[{self.name}]: Refreshing proxy pool (Early Return Mode)...")
             candidates = await self._fetch_candidates()
             if not candidates:
                 return list(self.proxies)
 
             good = []
-            semaphore = asyncio.Semaphore(100) # Concorrenza massiccia per check istantanei
+            semaphore = asyncio.Semaphore(100)
+            ready_event = asyncio.Event()
             
-            tasks = [self._probe_proxy_worker(c, probe_func, semaphore, good) for c in candidates]
-            await asyncio.gather(*tasks)
+            # Funzione interna per completare il lavoro in background
+            async def background_validator():
+                tasks = [self._probe_proxy_worker(c, probe_func, semaphore, good, ready_event) for c in candidates]
+                await asyncio.gather(*tasks)
+                if good:
+                    self.proxies = good
+                    self.expires_at = time.time() + self.cache_ttl
+                    logger.info(f"ProxyManager[{self.name}]: Background validation finished. Total good: {len(good)}")
+                ready_event.set() # Assicura che get_proxies non resti appeso se finisce tutto prima dei 3 proxy
+
+            # Avvia la validazione in background
+            bg_task = asyncio.create_task(background_validator())
             
+            # Aspetta i primi 3 proxy o un timeout di 5 secondi per la prima risposta
+            try:
+                if not good or len(good) < 3:
+                    await asyncio.wait_for(ready_event.wait(), timeout=5.0)
+            except asyncio.TimeoutError:
+                logger.debug(f"ProxyManager[{self.name}]: Early return timeout reached, returning {len(good)} proxies found so far.")
+
+            # Se abbiamo trovato qualcosa, restituiamo subito
             if good:
-                self.proxies = good
-                self.expires_at = time.time() + self.cache_ttl
-                logger.info(f"ProxyManager[{self.name}]: Pool updated with {len(good)} working proxies.")
-            else:
-                logger.warning(f"ProxyManager[{self.name}]: No working proxies found in this batch.")
+                return list(good)
             
+            # Se proprio non abbiamo trovato nulla nei primi secondi, aspettiamo il task di background (o finché non ne arriva uno)
+            await bg_task
             return list(self.proxies)
 
     async def get_next_sequence(self, probe_func: Callable[[str], Any]) -> List[str]:
