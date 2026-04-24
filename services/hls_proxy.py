@@ -1389,13 +1389,15 @@ class HLSProxy:
                     target_url,
                     force_refresh=force_refresh,
                     request_headers=combined_headers,
-                    bypass_warp=bypass_warp
+                    bypass_warp=bypass_warp,
+                    proxy=request.query.get("proxy")
                 )
                 bypass_warp = result.get("bypass_warp", bypass_warp)
                 stream_url = result["destination_url"]
                 stream_headers = result.get("request_headers", {})
                 captured_manifest = result.get("captured_manifest")
                 force_disable_ssl = result.get("disable_ssl", False)
+                selected_proxy = request.query.get("proxy") or result.get("selected_proxy")
 
                 if force_disable_ssl:
                     if "?" in stream_url:
@@ -1468,6 +1470,7 @@ class HLSProxy:
                     shorten_url_func=self.shorten_hls_url if use_short_hls_urls else None,
                     bypass_warp=bypass_warp,
                     disable_ssl=disable_ssl,
+                    selected_proxy=selected_proxy,
                 )
                 return web.Response(
                     text=rewritten_manifest,
